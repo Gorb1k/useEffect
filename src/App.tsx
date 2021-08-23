@@ -1,26 +1,63 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useEffect, useState} from 'react';
+import './app.css'
+import axios from 'axios'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+type SearchUserType = {
+    login: string
+    id: number
+}
+type SearchResult = {
+    items: SearchUserType[]
 }
 
-export default App;
+export const GitHub = () => {
+    const [selectUser, setSelectUser] = useState<SearchUserType | null>(null)
+    const [users, setUsers] = useState<SearchUserType[]>([])
+    const [tempSearch, setTempSearch] = useState<string>('')
+
+    useEffect(() => {
+        console.log('sync')
+        if (selectUser) {
+            document.title = selectUser.login + ' App'
+        }
+    }, [selectUser])
+    useEffect(() => {
+        axios.get<SearchResult>('https://api.github.com/search/users?q=gorbik')
+            .then((res) =>
+                setUsers(res.data.items)
+            )
+
+    }, [])
+
+    return (
+        <div className={'container'}>
+            <div className={'sidebar'}>
+                <div>
+                    <input value={tempSearch}
+                           onChange={(e) => {
+                               setTempSearch(e.currentTarget.value)
+                           }}
+                           type="text"
+                           placeholder={'search'}/>
+                    <button>Find</button>
+                </div>
+                <ul className={'user-list'}>
+                    {users.map((u) =>
+                        <li key={u.id}
+                            className={selectUser?.id === u.id ? 'selected' : ''}
+                            onClick={() => {
+                                setSelectUser(u)
+                            }}>
+                            {u.login}
+                        </li>)}
+                </ul>
+            </div>
+            <div>
+                <h2>Username</h2>
+                <div>Details</div>
+            </div>
+        </div>
+
+
+    )
+}

@@ -1,0 +1,10 @@
+.container {
+  display: flex;
+}
+.container .sidebar {
+  margin-right: 50px;
+}
+.container .user-list .selected {
+  background-color: grey;
+}
+/*# sourceMappingURL=app.css.map */
