@@ -71,42 +71,72 @@ export const UsersList: FC<UsersListPropsType> = ({selectUser, onUserSelect, ter
     )
 }
 type TimerProps = {
-
+    seconds:number
+    onChange: (sec:number) => void
+    timerKey:string
 }
-export const Timer:FC<TimerProps> = ({}) => {
-    const [seconds, setSeconds] = useState(60)
+export const Timer: FC<TimerProps> = (props) => {
+    const [seconds, setSeconds] = useState(props.seconds)
     useEffect(() => {
-        setInterval(() => {
-            setSeconds((sec) => sec - 1)
-        },1000)
-    },[])
-  return(
-      <div>
-          {seconds}
-      </div>
-  )
+        setSeconds(props.seconds)
+    },[props.seconds])
+    useEffect(() => {
+        props.onChange(seconds)
+    },[seconds])
+    useEffect(() => {
+        const timerInterval = setInterval(() => {
+
+            setSeconds((sec) => {
+                if (sec > 0) {
+                    console.log('tick')
+                    return  sec - 1
+                } else {
+                    console.log('end')
+                    return 0
+                }
+            })
+
+        }, 1000)
+        return () => {
+            clearInterval(timerInterval)
+        }
+    }, [props.timerKey])
+    return (
+        <div>
+            {seconds}
+        </div>
+    )
 }
 type UserDetailsType = {
     user: SearchUserType | null
 }
 export const UserDetails: FC<UserDetailsType> = ({user}) => {
     const [userDetail, setUserDetail] = useState<null | UserType>(null)
+    const [seconds, setSeconds] = useState(10)
     useEffect(() => {
         console.log('sync user details')
         if (user) {
             axios
                 .get<UserType>(`https://api.github.com/users/${user.login}`)
-                .then((res) =>
+                .then((res) =>{
+                    setSeconds(10)
                     setUserDetail(res.data)
+                    }
+
                 )
         }
 
     }, [user])
+    useEffect(() => {
+        if (seconds < 1) {
+            setUserDetail(null)
+        }
+    },[seconds])
     return (
         <div>
             {userDetail && <div>
                 <h2>{userDetail.login}</h2>
-                <Timer/>
+                <Timer seconds={seconds} onChange={setSeconds} timerKey={userDetail.id.toString()}/>
                 <img src={userDetail.avatar_url} alt=""/>
                 <br/>
                 {userDetail.login}
