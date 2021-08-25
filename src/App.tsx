@@ -1,6 +1,7 @@
 import React, {FC, useEffect, useState} from 'react';
 import './app.css'
 import axios from 'axios'
+import Spinner from "./Spinner";
 
 type SearchUserType = {
     login: string
@@ -50,46 +51,54 @@ type UsersListPropsType = {
 }
 export const UsersList: FC<UsersListPropsType> = ({selectUser, onUserSelect, term}) => {
     const [users, setUsers] = useState<SearchUserType[]>([])
+    const [loading, setLoading] = useState<boolean>(false)
     useEffect(() => {
+        setLoading(true)
         axios.get<SearchResult>(`https://api.github.com/search/users?q=${term}`)
-            .then((res) =>
-                setUsers(res.data.items)
+            .then((res) => {
+                    debugger
+                    setLoading(false)
+                    setUsers(res.data.items)
+                }
             )
 
     }, [term])
+
     return (
-        <ul className={'user-list'}>
-            {users.map((u) =>
-                <li key={u.id}
-                    className={selectUser?.id === u.id ? 'selected' : ''}
-                    onClick={() => {
-                        onUserSelect(u)
-                    }}>
-                    {u.login}
-                </li>)}
-        </ul>
+        loading
+            ? <Spinner/>
+            : <ul className={'user-list'}>
+                {users.map((u) =>
+                    <li key={u.id}
+                        className={selectUser?.id === u.id ? 'selected' : ''}
+                        onClick={() => {
+                            onUserSelect(u)
+                        }}>
+                        {u.login}
+                    </li>)}
+            </ul>
     )
 }
 type TimerProps = {
-    seconds:number
-    onChange: (sec:number) => void
-    timerKey:string
+    seconds: number
+    onChange: (sec: number) => void
+    timerKey: string
 }
 export const Timer: FC<TimerProps> = (props) => {
     const [seconds, setSeconds] = useState(props.seconds)
     useEffect(() => {
         setSeconds(props.seconds)
-    },[props.seconds])
+    }, [props.seconds])
     useEffect(() => {
         props.onChange(seconds)
-    },[seconds])
+    }, [seconds])
     useEffect(() => {
         const timerInterval = setInterval(() => {
 
             setSeconds((sec) => {
                 if (sec > 0) {
                     console.log('tick')
-                    return  sec - 1
+                    return sec - 1
                 } else {
                     console.log('end')
                     return 0
@@ -113,17 +122,20 @@ type UserDetailsType = {
 export const UserDetails: FC<UserDetailsType> = ({user}) => {
     const [userDetail, setUserDetail] = useState<null | UserType>(null)
     const [seconds, setSeconds] = useState(10)
+    const [loading, setLoading] = useState<boolean>(false)
     useEffect(() => {
         console.log('sync user details')
         if (user) {
+            setLoading(true)
             axios
                 .get<UserType>(`https://api.github.com/users/${user.login}`)
-                .then((res) =>{
-                    setSeconds(10)
-                    setUserDetail(res.data)
+                .then((res) => {
+                        setSeconds(10)
+                        setUserDetail(res.data)
                     }
-
-                )
+                ).finally(() => {
+                    setLoading(false)
+            })
         }
 
     }, [user])
@@ -131,9 +143,11 @@ export const UserDetails: FC<UserDetailsType> = ({user}) => {
         if (seconds < 1) {
             setUserDetail(null)
         }
-    },[seconds])
+    }, [seconds])
     return (
-        <div>
+        loading
+            ? <Spinner color={'green'}/>
+            : <div>
             {userDetail && <div>
                 <h2>{userDetail.login}</h2>
                 <Timer seconds={seconds} onChange={setSeconds} timerKey={userDetail.id.toString()}/>
@@ -166,7 +180,8 @@ export const GitHub = () => {
                 }}/>
                 <button onClick={() => {
                     setSearchTerm('gorbik')
-                }}>Reset
+                }}>
+                    Reset
                 </button>
                 <UsersList term={searchTerm} selectUser={selectUser} onUserSelect={setSelectUser}/>
             </div>
